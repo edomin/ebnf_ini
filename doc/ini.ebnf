@@ -1,0 +1,18 @@
+nonnewline_symbol  = ? any unicode symbol ? - "\n"
+whitespace_symbol  = " " | "\t"
+whitespace         = whitespace_symbol , {whitespace_symbol}
+comment            = [whitespace] , ";" , {nonnewline_symbol} , "\n"
+newline            = [whitespace] , "\n"
+comment_or_newline = comment | newline
+notreserved_symbol = nonnewline_symbol - " " - "\t" - ";" - "=" - "[" - "]"
+noncomment_symbol  = nonnewline_symbol - ";"
+nonempty_symbol    = nonnewline_symbol - " " - "\t" - ";"
+key                = notreserved_symbol , {notreserved_symbol}
+value              = notreserved_symbol , {noncomment_symbol} [nonempty_symbol]
+key_value          = [whitespace] , key , [whitespace] , "=" , [whitespace] , [value]
+empty_line         = [whitespace] , comment_or_newline
+section_header     = "[" , notreserved_symbol , {notreserved_symbol} , "]"
+section_line       = empty_line | (key_value , comment_or_newline)
+headerless_section = section_line , {section_line}
+section            = section_header , comment_or_newline, {section_line}
+ini                = [headerless_section] , {section}
