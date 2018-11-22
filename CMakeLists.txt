@@ -4,7 +4,7 @@ project(ebnf_ini)
 set(CMAKE_C_STANDARD 90)
 set(DEBUG_FLAGS "-O0 -g -ggdb")
 set(WARNING_FLAGS "-Wall -Wextra -Werror -Wno-unused-parameter \
- -Wno-unused-but-set-parameter -Winit-self -Wswitch-default \
+ -Wno-unused-but-set-parameter -Wno-unused-value -Winit-self -Wswitch-default \
  -Wduplicated-branches -Wduplicated-cond -Wfloat-equal -Wdangling-else \
  -Wlogical-op")
 
