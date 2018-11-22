@@ -34,4 +34,4 @@ list(APPEND SOURCE_FILES
   "${PROJECT_SOURCES_DIR}/ebnf_ini.c"
   "test/test.c"
 )
-add_executable(test_uconvert ${SOURCE_FILES})
+add_executable(test_ebnf_ini ${SOURCE_FILES})

@@ -9,10 +9,10 @@ refresh: cmake_build
 build: refresh
 	cd cmake_build; make
 
-cmake_build/test_uconvert: build
+cmake_build/test_ebnf_ini: build
 
-run_test: cmake_build/test_uconvert
-	cmake_build/test_uconvert
+run_test: cmake_build/test_ebnf_ini
+	cmake_build/test_ebnf_ini
 
 clean:
 	rm -r -f ./cmake_build
