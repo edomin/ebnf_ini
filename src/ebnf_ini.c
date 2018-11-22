@@ -32,7 +32,7 @@ bool INI_IsWhitespaceSymbol(const char *p) {
 bool INI_IsWhitespace(const char *p, const char **end) {
     if (INI_IsWhitespaceSymbol(p)) {
         do
-            p++;
+            p = (const char *)UC_StringUtf8NextCodepoint((uint8_t *)p);
         while (INI_IsWhitespaceSymbol(p));
     } else
         return false;
@@ -49,16 +49,16 @@ bool INI_IsComment(const char *p, const char **end) {
 
     UC_Utf8Copy((uint8_t *)symbol, (const uint8_t *)p);
     if (strcmp(symbol, ";") == 0)
-        p++;
+        p = (const char *)UC_StringUtf8NextCodepoint((uint8_t *)p);
     else
         return false;
 
     while (INI_IsNonnewlineSymbol(p))
-        p++;
+        p = (const char *)UC_StringUtf8NextCodepoint((uint8_t *)p);
 
     UC_Utf8Copy((uint8_t *)symbol, (const uint8_t *)p);
     if (strcmp(symbol, "\n") == 0)
-        p++;
+        p = (const char *)UC_StringUtf8NextCodepoint((uint8_t *)p);
     else
         return false;
 
@@ -75,7 +75,7 @@ bool INI_IsNewline(const char *p, const char **end) {
 
     UC_Utf8Copy((uint8_t *)symbol, (const uint8_t *)p);
     if (strcmp(symbol, "\n") == 0)
-        p++;
+        p = (const char *)UC_StringUtf8NextCodepoint((uint8_t *)p);
     else
         return false;
 
@@ -150,7 +150,7 @@ bool INI_IsNonemptySymbol(const char *p) {
 bool INI_IsKey(const char *p, const char **end) {
     if (INI_IsNotreservedSymbol(p)) {
         do
-            p++;
+            p = (const char *)UC_StringUtf8NextCodepoint((uint8_t *)p);
         while (INI_IsNotreservedSymbol(p));
     } else
         return false;
@@ -161,12 +161,12 @@ bool INI_IsKey(const char *p, const char **end) {
 bool INI_IsValue(const char *p, const char **end) {
     if (INI_IsNotreservedSymbol(p)) {
         do
-            p++;
+            p = (const char *)UC_StringUtf8NextCodepoint((uint8_t *)p);
         while (INI_IsNoncommentSymbol(p));
         do
-            p--;
+            p = (const char *)UC_StringUtf8PreviousCodepoint((uint8_t *)p);
         while (!INI_IsNonemptySymbol(p));
-        p++;
+        p = (const char *)UC_StringUtf8NextCodepoint((uint8_t *)p);
     } else
         return false;
     *end = p;
@@ -190,7 +190,7 @@ bool INI_IsKeyValue(const char *p, const char **end) {
 
     UC_Utf8Copy((uint8_t *)symbol, (const uint8_t *)p);
     if (strcmp(symbol, "=") == 0)
-        p++;
+        p = (const char *)UC_StringUtf8NextCodepoint((uint8_t *)p);
     else
         return false;
 
@@ -224,20 +224,20 @@ bool INI_IsSectionHeader(const char *p, const char **end) {
 
     UC_Utf8Copy((uint8_t *)symbol, (const uint8_t *)p);
     if (strcmp(symbol, "[") == 0)
-        p++;
+        p = (const char *)UC_StringUtf8NextCodepoint((uint8_t *)p);
     else
         return false;
 
     if (INI_IsNotreservedSymbol(p)) {
         do
-            p++;
+            p = (const char *)UC_StringUtf8NextCodepoint((uint8_t *)p);
         while (INI_IsNotreservedSymbol(p));
     } else
         return false;
 
     UC_Utf8Copy((uint8_t *)symbol, (const uint8_t *)p);
     if (strcmp(symbol, "]") == 0)
-        p++;
+        p = (const char *)UC_StringUtf8NextCodepoint((uint8_t *)p);
     else
         return false;
 
