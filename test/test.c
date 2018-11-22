@@ -2,316 +2,539 @@
 
 #include "ebnf_ini_internal.h"
 
-int main(int argc, char **argv) {
+typedef bool (IsSymbolFunc)(const char *);
+typedef bool (IsRangeFunc)(const char *, const char **);
+typedef bool (IsRangeWithRecordFunc)(const char *, const char **, IniRecord **);
+typedef bool (IsRangeWithSectionFunc)(const char *, const char **,
+ IniSection **);
+
+void TestIsSymbol(IsSymbolFunc func, const char *testValue,
+ const char *passMessage, const char *failMessage) {
+    if (func(testValue))
+        printf(passMessage, testValue);
+    else
+        printf(failMessage, testValue);
+}
+
+void TestIsRange(IsRangeFunc func, const char *testValue,
+ const char *failMessage) {
     const char *p;
 
-    if (INI_IsNonnewlineSymbol("a"))
-        printf("%s \n", "a is nonnewline symbol");
+    if (func(testValue, &p))
+        printf("'%s' -> '%s' \n", testValue, p);
     else
-        printf("%s \n", "a is newline symbol");
+        printf(failMessage, testValue);
+}
 
-    if (INI_IsNonnewlineSymbol("ю"))
-        printf("%s \n", "ю is nonnewline symbol");
+void TestIsRangeWithRecord(IsRangeWithRecordFunc func, const char *testValue,
+ const char *failMessage) {
+    const char *p;
+
+    if (func(testValue, &p, NULL))
+        printf("'%s' -> '%s' \n", testValue, p);
     else
-        printf("%s \n", "ю is newline symbol");
+        printf(failMessage, testValue);
+}
 
-    if (INI_IsNonnewlineSymbol("\n"))
-        printf("%s \n", "newline is nonnewline symbol");
+void TestIsRangeWithSection(IsRangeWithSectionFunc func, const char *testValue,
+ const char *failMessage) {
+    const char *p;
+
+    if (func(testValue, &p, NULL))
+        printf("'%s' -> '%s' \n", testValue, p);
     else
-        printf("%s \n", "newline is newline symbol");
+        printf(failMessage, testValue);
+}
 
-    if (INI_IsWhitespaceSymbol(" "))
-        printf("%s \n", "' ' is whitespace symbol");
-    else
-        printf("%s \n", "' ' is not whitespace symbol");
+void TestParser(void) {
+    IniData *iniData = INI_ParseString(
+     "key0=value0\n"
+     "key0.1=value0.1\n"
+     "key0.2=value0.2\n"
+     ";comment\n"
+     "[header]\n"
+     "key1=value1\n"
+     ";comment\n"
+     "[header2]\n"
+     "key2=value2\n"
+     "key3=value3\n"
+     ";comment\n"
+    );
 
-    if (INI_IsWhitespaceSymbol("\t"))
-        printf("%s \n", "'\t' is whitespace symbol");
-    else
-        printf("%s \n", "'\t' is not whitespace symbol");
+    (void)iniData;
 
-    if (INI_IsWhitespaceSymbol("a"))
-        printf("%s \n", "'a' is whitespace symbol");
-    else
-        printf("%s \n", "'a' is not whitespace symbol");
+    printf("INI_GetSectionsCount(iniData) - %i \n",
+     INI_GetSectionsCount(iniData));
 
-    if (INI_IsWhitespaceSymbol("ю"))
-        printf("%s \n", "'ю' is whitespace symbol");
-    else
-        printf("%s \n", "'ю' is not whitespace symbol");
+    printf("INI_GetSectionByNum(iniData, 0)->name - %s \n",
+     INI_GetSectionByNum(iniData, 0)->name);
+    printf("INI_GetSectionByNum(iniData, 1)->name - %s \n",
+     INI_GetSectionByNum(iniData, 1)->name);
 
+    printf("INI_GetSectionByName(iniData, NULL)->name - %s \n",
+     INI_GetSectionByName(iniData, NULL)->name);
+    printf("INI_GetSectionByName(iniData, \"header\")->name - %s \n",
+     INI_GetSectionByName(iniData, "header")->name);
+    printf("INI_GetSectionByName(iniData, \"header2\")->name - %s \n",
+     INI_GetSectionByName(iniData, "header2")->name);
+
+    printf("INI_GetSectionName(iniData, 0) - %s \n",
+     INI_GetSectionName(iniData, 0));
+    printf("INI_GetSectionName(iniData, 1) - %s \n",
+     INI_GetSectionName(iniData, 1));
+    printf("INI_GetSectionName(iniData, 2) - %s \n",
+     INI_GetSectionName(iniData, 2));
+
+    printf("INI_GetRecordsCountBySectionNum(iniData, -1) - %i \n",
+     INI_GetRecordsCountBySectionNum(iniData, -1));
+    printf("INI_GetRecordsCountBySectionNum(iniData, 0) - %i \n",
+     INI_GetRecordsCountBySectionNum(iniData, 0));
+    printf("INI_GetRecordsCountBySectionNum(iniData, 1) - %i \n",
+     INI_GetRecordsCountBySectionNum(iniData, 1));
+    printf("INI_GetRecordsCountBySectionNum(iniData, 2) - %i \n",
+     INI_GetRecordsCountBySectionNum(iniData, 2));
+
+    printf("INI_GetRecordsCount(iniData, NULL) - %i \n",
+     INI_GetRecordsCount(iniData, NULL));
+    printf("INI_GetRecordsCount(iniData, \"\") - %i \n",
+     INI_GetRecordsCount(iniData, ""));
+    printf("INI_GetRecordsCount(iniData, \"header\") - %i \n",
+     INI_GetRecordsCount(iniData, "header"));
+    printf("INI_GetRecordsCount(iniData, \"header2\") - %i \n",
+     INI_GetRecordsCount(iniData, "header2"));
+    printf("INI_GetRecordsCount(iniData, \"header3\") - %i \n",
+     INI_GetRecordsCount(iniData, "header3"));
+
+    printf("INI_GetRecordByNum(iniData, 0, 0)->key - %s \n",
+     INI_GetRecordByNum(iniData, 0, 0)->key);
+    printf("INI_GetRecordByNum(iniData, 0, 0)->value - %s \n",
+     INI_GetRecordByNum(iniData, 0, 0)->value);
+
+    printf("INI_GetKeyByNum(iniData, 0, 0) - %s \n",
+     INI_GetKeyByNum(iniData, 0, 0));
+    printf("INI_GetKeyByNum(iniData, 0, 666) - %s \n",
+     INI_GetKeyByNum(iniData, 0, 666));
+    printf("INI_GetKeyByNum(iniData, 666, 0) - %s \n",
+     INI_GetKeyByNum(iniData, 666, 0));
+
+    INI_FreeIniData(iniData);
+}
+
+int main(int argc, char **argv) {
+    /* INI_IsNonnewlineSymbol */
+    TestIsSymbol(
+     INI_IsNonnewlineSymbol,
+     "a",
+     "%s is nonnewline symbol \n",
+     "%s is newline symbol \n"
+    );
+    TestIsSymbol(
+     INI_IsNonnewlineSymbol,
+     "ю",
+     "%s is nonnewline symbol \n",
+     "%s is newline symbol \n"
+    );
+    TestIsSymbol(
+     INI_IsNonnewlineSymbol,
+     "\n",
+     "%s is nonnewline symbol \n",
+     "%s is newline symbol \n"
+    );
+
+    /* INI_IsWhitespaceSymbol */
+    TestIsSymbol(
+     INI_IsWhitespaceSymbol,
+     " ",
+     "'%s' is whitespace symbol \n",
+     "'%s' is not whitespace symbol \n"
+    );
+    TestIsSymbol(
+     INI_IsWhitespaceSymbol,
+     "\t",
+     "'%s' is whitespace symbol \n",
+     "'%s' is not whitespace symbol \n"
+    );
+    TestIsSymbol(
+     INI_IsWhitespaceSymbol,
+     "a",
+     "'%s' is whitespace symbol \n",
+     "'%s' is not whitespace symbol \n"
+    );
+    TestIsSymbol(
+     INI_IsWhitespaceSymbol,
+     "ю",
+     "'%s' is whitespace symbol \n",
+     "'%s' is not whitespace symbol \n"
+    );
+
+    /* INI_IsWhitespace */
     printf(
      "%s \n", "Skipping leading whitespaces with INI_IsWhitespace function:");
-    if (INI_IsWhitespace("    hello", &p))
-        printf("'%s' -> '%s' \n", "    hello", p);
-    else
-        printf("'%s' has not leading whitespaces \n", "    thello");
-    if (INI_IsWhitespace("\t\t\t\thello", &p))
-        printf("'%s' -> '%s' \n", "\t\t\t\thello", p);
-    else
-        printf("'%s' has not leading whitespaces \n", "\t\t\t\thello");
-    if (INI_IsWhitespace("  \t\thello", &p))
-        printf("'%s' -> '%s' \n", "  \t\thello", p);
-    else
-        printf("'%s' has not leading whitespaces \n", "  \t\thello");
-    if (INI_IsWhitespace("thello", &p))
-        printf("'%s' -> '%s' \n", "hello", p);
-    else
-        printf("'%s' has not leading whitespaces \n", "hello");
+    TestIsRange(
+     INI_IsWhitespace,
+     "    hello",
+     "'%s' has not leading whitespaces \n"
+    );
+    TestIsRange(
+     INI_IsWhitespace,
+     "\t\t\t\thello",
+     "'%s' has not leading whitespaces \n"
+    );
+    TestIsRange(
+     INI_IsWhitespace,
+     "  \t\thello",
+     "'%s' has not leading whitespaces \n"
+    );
+    TestIsRange(
+     INI_IsWhitespace,
+     "hello",
+     "'%s' has not leading whitespaces \n"
+    );
 
+    /* INI_IsComment */
     printf("%s \n", "Skipping leading comment with INI_IsComment function:");
-    if (INI_IsComment("; comment\nhello", &p))
-        printf("'%s'\n->\n'%s' \n", "; comment\nhello", p);
-    else
-        printf("'%s' has not leading comment \n", "; comment\nhello");
-    if (INI_IsComment("    ; comment\nhello", &p))
-        printf("'%s'\n->\n'%s' \n", "    ; comment\nhello", p);
-    else
-        printf("'%s' has not leading comment \n", "    ; comment\nhello");
-    if (INI_IsComment("comment\nhello", &p))
-        printf("'%s'\n->\n'%s' \n", "comment\nhello", p);
-    else
-        printf("'%s' has not leading comment \n", "comment\nhello");
+    TestIsRange(
+     INI_IsComment,
+     "; comment\nhello",
+     "'%s' has not leading comment \n"
+    );
+    TestIsRange(
+     INI_IsComment,
+     "    ; comment\nhello",
+     "'%s' has not leading comment \n"
+    );
+    TestIsRange(
+     INI_IsComment,
+     "    ; Комментарий\nhello",
+     "'%s' has not leading comment \n"
+    );
+    TestIsRange(
+     INI_IsComment,
+     "comment\nhello",
+     "'%s' has not leading comment \n"
+    );
 
+    /* INI_IsNewline */
     printf("%s \n", "Skipping leading newline with INI_IsNewline function:");
-    if (INI_IsNewline("\nhello", &p))
-        printf("'%s'\n->\n'%s' \n", "\nhello", p);
-    else
-        printf("'%s' has not leading newline \n", "\nhello");
-    if (INI_IsNewline("    \nhello", &p))
-        printf("'%s'\n->\n'%s' \n", "    \nhello", p);
-    else
-        printf("'%s' has not leading newline \n", "    \nhello");
-    if (INI_IsNewline("hello", &p))
-        printf("'%s'\n->\n'%s' \n", "hello", p);
-    else
-        printf("'%s' has not leading newline \n", "hello");
+    TestIsRange(
+     INI_IsNewline,
+     "\nhello",
+     "'%s' has not leading newline \n"
+    );
+    TestIsRange(
+     INI_IsNewline,
+     "    \nhello",
+     "'%s' has not leading newline \n"
+    );
+    TestIsRange(
+     INI_IsNewline,
+     "hello",
+     "'%s' has not leading newline \n"
+    );
 
-    printf("%s \n", "Skipping leading comment or newline with INI_IsCommentOrNewline function:");
-    if (INI_IsCommentOrNewline("; comment\nhello", &p))
-        printf("'%s'\n->\n'%s' \n", "; comment\nhello", p);
-    else
-        printf("'%s' has not leading comment or newline \n", "; comment\nhello");
-    if (INI_IsCommentOrNewline("    ; comment\nhello", &p))
-        printf("'%s'\n->\n'%s' \n", "    ; comment\nhello", p);
-    else
-        printf("'%s' has not leading comment or newline \n", "    ; comment\nhello");
-    if (INI_IsCommentOrNewline("\nhello", &p))
-        printf("'%s'\n->\n'%s' \n", "\nhello", p);
-    else
-        printf("'%s' has not leading comment or newline \n", "\nhello");
-    if (INI_IsCommentOrNewline("comment\nhello", &p))
-        printf("'%s'\n->\n'%s' \n", "comment\nhello", p);
-    else
-        printf("'%s' has not leading comment or newline \n", "comment\nhello");
+    /* INI_IsCommentOrNewline */
+    printf(
+     "%s \n",
+     "Skipping leading comment or newline with INI_IsCommentOrNewline function:"
+    );
+    TestIsRange(
+     INI_IsCommentOrNewline,
+     "; comment\nhello",
+     "'%s' has not leading comment or newline \n"
+    );
+    TestIsRange(
+     INI_IsCommentOrNewline,
+     "    ; comment\nhello",
+     "'%s' has not leading comment or newline \n"
+    );
+    TestIsRange(
+     INI_IsCommentOrNewline,
+     "\nhello",
+     "'%s' has not leading comment or newline \n"
+    );
+    TestIsRange(
+     INI_IsCommentOrNewline,
+     "comment\nhello",
+     "'%s' has not leading comment or newline \n"
+    );
 
-    if (INI_IsNotreservedSymbol("a"))
-        printf("%s \n", "'a' is notreserved symbol");
-    else
-        printf("%s \n", "'a' is reserved symbol");
+    /* INI_IsNotreservedSymbol */
+    TestIsSymbol(
+     INI_IsNotreservedSymbol,
+     "a",
+     "'%s' is notreserved symbol \n",
+     "'%s' is reserved symbol \n"
+    );
+    TestIsSymbol(
+     INI_IsNotreservedSymbol,
+     "ю",
+     "'%s' is notreserved symbol \n",
+     "'%s' is reserved symbol \n"
+    );
+    TestIsSymbol(
+     INI_IsNotreservedSymbol,
+     " ",
+     "'%s' is notreserved symbol \n",
+     "'%s' is reserved symbol \n"
+    );
+    TestIsSymbol(
+     INI_IsNotreservedSymbol,
+     "\t",
+     "'%s' is notreserved symbol \n",
+     "'%s' is reserved symbol \n"
+    );
+    TestIsSymbol(
+     INI_IsNotreservedSymbol,
+     ";",
+     "'%s' is notreserved symbol \n",
+     "'%s' is reserved symbol \n"
+    );
+    TestIsSymbol(
+     INI_IsNotreservedSymbol,
+     "=",
+     "'%s' is notreserved symbol \n",
+     "'%s' is reserved symbol \n"
+    );
 
-    if (INI_IsNotreservedSymbol("ю"))
-        printf("%s \n", "'ю' is notreserved symbol");
-    else
-        printf("%s \n", "'ю' is reserved symbol");
+    /* INI_IsNoncommentSymbol */
+    TestIsSymbol(
+     INI_IsNoncommentSymbol,
+     "a",
+     "'%s' is noncomment symbol \n",
+     "'%s' is comment symbol \n"
+    );
+    TestIsSymbol(
+     INI_IsNoncommentSymbol,
+     "ю",
+     "'%s' is noncomment symbol \n",
+     "'%s' is comment symbol \n"
+    );
+    TestIsSymbol(
+     INI_IsNoncommentSymbol,
+     ";",
+     "'%s' is noncomment symbol \n",
+     "'%s' is comment symbol \n"
+    );
 
-    if (INI_IsNotreservedSymbol(" "))
-        printf("%s \n", "' ' is notreserved symbol");
-    else
-        printf("%s \n", "' ' is reserved symbol");
+    /* INI_IsNonemptySymbol */
+    TestIsSymbol(
+     INI_IsNonemptySymbol,
+     "\t",
+     "'%s' is nonempty symbol \n",
+     "'%s' is empty symbol \n"
+    );
+    TestIsSymbol(
+     INI_IsNonemptySymbol,
+     ";",
+     "'%s' is nonempty symbol \n",
+     "'%s' is empty symbol \n"
+    );
+    TestIsSymbol(
+     INI_IsNonemptySymbol,
+     "=",
+     "'%s' is nonempty symbol \n",
+     "'%s' is empty symbol \n"
+    );
 
-    if (INI_IsNotreservedSymbol("\t"))
-        printf("%s \n", "'\t' is notreserved symbol");
-    else
-        printf("%s \n", "'\t' is reserved symbol");
-
-    if (INI_IsNotreservedSymbol(";"))
-        printf("%s \n", "';' is notreserved symbol");
-    else
-        printf("%s \n", "';' is reserved symbol");
-
-    if (INI_IsNotreservedSymbol("="))
-        printf("%s \n", "'=' is notreserved symbol");
-    else
-        printf("%s \n", "'=' is reserved symbol");
-
-    if (INI_IsNoncommentSymbol("a"))
-        printf("%s \n", "'a' is noncomment symbol");
-    else
-        printf("%s \n", "'a' is comment symbol");
-
-    if (INI_IsNoncommentSymbol("ю"))
-        printf("%s \n", "'ю' is noncomment symbol");
-    else
-        printf("%s \n", "'ю' is comment symbol");
-
-    if (INI_IsNoncommentSymbol(";"))
-        printf("%s \n", "';' is noncomment symbol");
-    else
-        printf("%s \n", "';' is comment symbol");
-
-    if (INI_IsNonemptySymbol("\t"))
-        printf("%s \n", "'\t' is nonempty symbol");
-    else
-        printf("%s \n", "'\t' is empty symbol");
-
-    if (INI_IsNonemptySymbol(";"))
-        printf("%s \n", "';' is nonempty symbol");
-    else
-        printf("%s \n", "';' is empty symbol");
-
-    if (INI_IsNonemptySymbol("="))
-        printf("%s \n", "'=' is nonempty symbol");
-    else
-        printf("%s \n", "'=' is empty symbol");
-
+    /* INI_IsKey */
     printf("%s \n", "Skipping leading key with INI_IsKey function:");
-    if (INI_IsKey("key=value", &p))
-        printf("'%s' -> '%s' \n", "key=value", p);
-    else
-        printf("'%s' has not leading key \n", "key=value");
-    if (INI_IsKey("key = value", &p))
-        printf("'%s' -> '%s' \n", "key = value", p);
-    else
-        printf("'%s' has not leading key \n", "key = value");
+    TestIsRange(
+     INI_IsKey,
+     "key=value",
+     "'%s' has not leading key \n"
+    );
+    TestIsRange(
+     INI_IsKey,
+     "key = value",
+     "'%s' has not leading key \n"
+    );
 
+    /* INI_IsValue */
     printf("%s \n", "Skipping leading value with INI_IsValue function:");
-    if (INI_IsValue("value\n", &p))
-        printf("'%s' -> '%s' \n", "value\n", p);
-    else
-        printf("'%s' has not leading key \n", "value\n");
-    if (INI_IsValue("value \n", &p))
-        printf("'%s' -> '%s' \n", "value \n", p);
-    else
-        printf("'%s' has not leading key \n", "value \n");
-    if (INI_IsValue("value;comment\n", &p))
-        printf("'%s' -> '%s' \n", "value;comment\n", p);
-    else
-        printf("'%s' has not leading key \n", "value;comment\n");
-    if (INI_IsValue("value ;comment\n", &p))
-        printf("'%s' -> '%s' \n", "value ;comment\n", p);
-    else
-        printf("'%s' has not leading key \n", "value ;comment\n");
+    TestIsRange(
+     INI_IsValue,
+     "value\n",
+     "'%s' has not leading value \n"
+    );
+    TestIsRange(
+     INI_IsValue,
+     "value \n",
+     "'%s' has not leading value \n"
+    );
+    TestIsRange(
+     INI_IsValue,
+     "value;comment\n",
+     "'%s' has not leading value \n"
+    );
+    TestIsRange(
+     INI_IsValue,
+     "value ;comment\n",
+     "'%s' has not leading value \n"
+    );
 
+    /* INI_IsKeyValue */
     printf("%s \n", "Skipping leading key-value with INI_IsKeyValue function:");
-    if (INI_IsKeyValue("key=value\n", &p))
-        printf("'%s' -> '%s' \n", "key=value\n", p);
-    else
-        printf("'%s' has not leading key-value \n", "key=value\n");
-    if (INI_IsKeyValue("key = value\n", &p))
-        printf("'%s' -> '%s' \n", "key = value\n", p);
-    else
-        printf("'%s' has not leading key-value \n", "key = value\n");
-    if (INI_IsKeyValue("key=value;comment\n", &p))
-        printf("'%s' -> '%s' \n", "key=value;comment\n", p);
-    else
-        printf("'%s' has not leading key-value \n", "key=value;comment\n");
-    if (INI_IsKeyValue("key=\n", &p))
-        printf("'%s' -> '%s' \n", "key=\n", p);
-    else
-        printf("'%s' has not leading key-value \n", "key=\n");
-    if (INI_IsKeyValue("key=;comment\n", &p))
-        printf("'%s' -> '%s' \n", "key=;comment\n", p);
-    else
-        printf("'%s' has not leading key-value \n", "key=;comment\n");
-    if (INI_IsKeyValue("key = ;comment\n", &p))
-        printf("'%s' -> '%s' \n", "key = ;comment\n", p);
-    else
-        printf("'%s' has not leading key-value \n", "key = ;comment\n");
-    if (INI_IsKeyValue(";comment\n", &p))
-        printf("'%s' -> '%s' \n", ";comment\n", p);
-    else
-        printf("'%s' has not leading key-value \n", ";comment\n");
+    TestIsRangeWithRecord(
+     INI_IsKeyValue,
+     "key=value\n",
+     "'%s' has not leading key-value \n"
+    );
+    TestIsRangeWithRecord(
+     INI_IsKeyValue,
+     "key = value\n",
+     "'%s' has not leading key-value \n"
+    );
+    TestIsRangeWithRecord(
+     INI_IsKeyValue,
+     "key=value;comment\n",
+     "'%s' has not leading key-value \n"
+    );
+    TestIsRangeWithRecord(
+     INI_IsKeyValue,
+     "key=\n",
+     "'%s' has not leading key-value \n"
+    );
+    TestIsRangeWithRecord(
+     INI_IsKeyValue,
+     "key=;comment\n",
+     "'%s' has not leading key-value \n"
+    );
+    TestIsRangeWithRecord(
+     INI_IsKeyValue,
+     "key = ;comment\n",
+     "'%s' has not leading key-value \n"
+    );
+    TestIsRangeWithRecord(
+     INI_IsKeyValue,
+     ";comment\n",
+     "'%s' has not leading key-value \n"
+    );
 
-    printf("%s \n", "Skipping leading empty lines with INI_IsEmptyLine function:");
-    if (INI_IsEmptyLine("\nkey=value", &p))
-        printf("'%s' -> '%s' \n", "\nkey=value", p);
-    else
-        printf("'%s' has not leading key-value \n", "\nkey=value");
-    if (INI_IsEmptyLine("\n    key=value", &p))
-        printf("'%s' -> '%s' \n", "\n    key=value", p);
-    else
-        printf("'%s' has not leading key-value \n", "\n    key=value");
-    if (INI_IsEmptyLine(";comment\nkey=value", &p))
-        printf("'%s' -> '%s' \n", ";comment\nkey=value", p);
-    else
-        printf("'%s' has not leading key-value \n", ";comment\nkey=value");
-    if (INI_IsEmptyLine(";comment\n key=value", &p))
-        printf("'%s' -> '%s' \n", ";comment\n key=value", p);
-    else
-        printf("'%s' has not leading key-value \n", ";comment\n key=value");
-    if (INI_IsEmptyLine("key=value", &p))
-        printf("'%s' -> '%s' \n", "key=value", p);
-    else
-        printf("'%s' has not leading key-value \n", "key=value");
+    /* INI_IsEmptyLine */
+    printf("%s \n",
+     "Skipping leading empty lines with INI_IsEmptyLine function:");
+    TestIsRange(
+     INI_IsEmptyLine,
+     "\nkey=value",
+     "'%s' has not leading empty line \n"
+    );
+    TestIsRange(
+     INI_IsEmptyLine,
+     "\n    key=value",
+     "'%s' has not leading empty line \n"
+    );
+    TestIsRange(
+     INI_IsEmptyLine,
+     ";comment\nkey=value",
+     "'%s' has not leading empty line \n"
+    );
+    TestIsRange(
+     INI_IsEmptyLine,
+     ";comment\n key=value",
+     "'%s' has not leading empty line \n"
+    );
+    TestIsRange(
+     INI_IsEmptyLine,
+     "key=value",
+     "'%s' has not leading empty line \n"
+    );
 
-    printf("%s \n", "Skipping leading section header with INI_IsSectionHeader function:");
-    if (INI_IsSectionHeader("[header]\nkey=value", &p))
-        printf("'%s' -> '%s' \n", "[header]\nkey=value", p);
-    else
-        printf("'%s' has not leading section header \n", "[header]\nkey=value");
-    if (INI_IsSectionHeader("[header];comment\nkey=value", &p))
-        printf("'%s' -> '%s' \n", "[header];comment\nkey=value", p);
-    else
-        printf("'%s' has not leading section header \n", "[header];comment\nkey=value");
-    if (INI_IsSectionHeader("[header]\n;comment\nkey=value", &p))
-        printf("'%s' -> '%s' \n", "[header]\n;comment\nkey=value", p);
-    else
-        printf("'%s' has not leading section header \n", "[header]\n;comment\nkey=value");
-    if (INI_IsSectionHeader("header\n;comment\nkey=value", &p))
-        printf("'%s' -> '%s' \n", "header\n;comment\nkey=value", p);
-    else
-        printf("'%s' has not leading section header \n", "header\n;comment\nkey=value");
+    /* INI_IsSectionHeader */
+    printf("%s \n",
+     "Skipping leading section header with INI_IsSectionHeader function:");
+    TestIsRange(
+     INI_IsSectionHeader,
+     "[header]\nkey=value",
+     "'%s' has not leading section header \n"
+    );
+    TestIsRange(
+     INI_IsSectionHeader,
+     "[header];comment\nkey=value",
+     "'%s' has not leading section header \n"
+    );
+    TestIsRange(
+     INI_IsSectionHeader,
+     "[header]\n;comment\nkey=value",
+     "'%s' has not leading section header \n"
+    );
+    TestIsRange(
+     INI_IsSectionHeader,
+     "header\n;comment\nkey=value",
+     "'%s' has not leading section header \n"
+    );
 
-    printf("%s \n", "Skipping leading section line with INI_IsSectionLine function:");
-    if (INI_IsSectionLine("\nkey=value", &p))
-        printf("'%s' -> '%s' \n", "\nkey=value", p);
-    else
-        printf("'%s' has not leading section line \n", "\nkey=value");
-    if (INI_IsSectionLine(";comment\nkey=value", &p))
-        printf("'%s' -> '%s' \n", ";comment\nkey=value", p);
-    else
-        printf("'%s' has not leading section line \n", ";comment\nkey=value");
-    if (INI_IsSectionLine("key=value;comment\nkey=value", &p))
-        printf("'%s' -> '%s' \n", "key=value;comment\nkey=value", p);
-    else
-        printf("'%s' has not leading section line \n", "key=value;comment\nkey=value");
-    if (INI_IsSectionLine("key=value\nkey=value", &p))
-        printf("'%s' -> '%s' \n", "key=value\nkey=value", p);
-    else
-        printf("'%s' has not leading section line \n", "key=value\nkey=value");
-    if (INI_IsSectionLine("=value\nkey=value", &p))
-        printf("'%s' -> '%s' \n", "=value\nkey=value", p);
-    else
-        printf("'%s' has not leading section line \n", "=value\nkey=value");
+    /* INI_IsSectionLine */
+    printf("%s \n",
+     "Skipping leading section line with INI_IsSectionLine function:");
+    TestIsRangeWithRecord(
+     INI_IsSectionLine,
+     "\nkey=value",
+     "'%s' has not leading section line \n"
+    );
+    TestIsRangeWithRecord(
+     INI_IsSectionLine,
+     ";comment\nkey=value",
+     "'%s' has not leading section line \n"
+    );
+    TestIsRangeWithRecord(
+     INI_IsSectionLine,
+     "key=value;comment\nkey=value",
+     "'%s' has not leading section line \n"
+    );
+    TestIsRangeWithRecord(
+     INI_IsSectionLine,
+     "key=value\nkey=value",
+     "'%s' has not leading section line \n"
+    );
+    TestIsRangeWithRecord(
+     INI_IsSectionLine,
+     "=value\nkey=value",
+     "'%s' has not leading section line \n"
+    );
 
-    printf("%s \n", "Skipping leading headless section with INI_IsSectionLine function:");
-    if (INI_IsHeadlessSection("key=value\nkey2=value2\n[header]", &p))
-        printf("'%s' -> '%s' \n", "key=value\nkey2=value2\n[header]", p);
-    else
-        printf("'%s' has not leading headless section \n", "key=value\nkey2=value2\n[header]");
-    if (INI_IsHeadlessSection("key=value\n;comment\n[header]", &p))
-        printf("'%s' -> '%s' \n", "key=value\n;comment\n[header]", p);
-    else
-        printf("'%s' has not leading headless section \n", "key=value\n;comment\n[header]");
-    if (INI_IsHeadlessSection("[header]key=value\n;comment\n[header2]", &p))
-        printf("'%s' -> '%s' \n", "[header]key=value\n;comment\n[header2]", p);
-    else
-        printf("'%s' has not leading headless section \n", "[header]key=value\n;comment\n[header2]");
+    /* INI_IsHeadlessSection */
+    printf("%s \n",
+     "Skipping leading headless section with INI_IsHeadlessSection function:");
+    TestIsRangeWithSection(
+     INI_IsHeadlessSection,
+     "key=value\nkey2=value2\n[header]",
+     "'%s' has not leading headless section \n"
+    );
+    TestIsRangeWithSection(
+     INI_IsHeadlessSection,
+     "key=value\n;comment\n[header]",
+     "'%s' has not leading headless section \n"
+    );
+    TestIsRangeWithSection(
+     INI_IsHeadlessSection,
+     "[header]key=value\n;comment\n[header2]",
+     "'%s' has not leading headless section \n"
+    );
 
-    printf("%s \n", "Skipping leading section with INI_IsSectionLine function:");
-    if (INI_IsSection("[header]\nkey=value\nkey2=value2\n[header2]", &p))
-        printf("'%s' -> '%s' \n", "[header]\nkey=value\nkey2=value2\n[header2]", p);
-    else
-        printf("'%s' has not leading section \n", "[header]\nkey=value\nkey2=value2\n[header2]");
-    if (INI_IsSection("[header]\nkey=value\n;comment\n[header2]", &p))
-        printf("'%s' -> '%s' \n", "[header]\nkey=value\n;comment\n[header2]", p);
-    else
-        printf("'%s' has not leading section \n", "[header]\nkey=value\n;comment\n[header2]");
-    if (INI_IsSection("key=value\n;comment\n[header2]", &p))
-        printf("'%s' -> '%s' \n", "key=value\n;comment\n[header2]", p);
-    else
-        printf("'%s' has not leading section \n", "key=value\n;comment\n[header2]");
+    /* INI_IsSection */
+    printf("%s \n", "Skipping leading section with INI_IsSection function:");
+    TestIsRangeWithSection(
+     INI_IsSection,
+     "[header]\nkey=value\nkey2=value2\n[header2]",
+     "'%s' has not leading section \n"
+    );
+    TestIsRangeWithSection(
+     INI_IsSection,
+     "[header]\nkey=value\n;comment\n[header2]",
+     "'%s' has not leading section \n"
+    );
+    TestIsRangeWithSection(
+     INI_IsSection,
+     "[Заголовок]\nКлюч=Значение\n;Комментарий\n[Заголовок2]",
+     "'%s' has not leading section \n"
+    );
+    TestIsRangeWithSection(
+     INI_IsSection,
+     "key=value\n;comment\n[header2]",
+     "'%s' has not leading section \n"
+    );
+
+    TestParser();
 
     return 0;
 }
