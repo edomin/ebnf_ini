@@ -1,6 +1,7 @@
 #include <stdio.h>
 
-#include "ebnf_ini_internal.h"
+#include "ebnf_check.h"
+#include "ini.h"
 
 typedef bool (IsSymbolFunc)(const char *);
 typedef bool (IsRangeFunc)(const char *, const char **);

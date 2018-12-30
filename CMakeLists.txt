@@ -23,7 +23,8 @@ include_directories(
 
 list(APPEND SOURCE_FILES
   "${PROJECT_LIBUCONVERT_SOURCES_DIR}/uconvert.c"
-  "${PROJECT_SOURCES_DIR}/ebnf_ini.c"
+  "${PROJECT_SOURCES_DIR}/ebnf_check.c"
+  "${PROJECT_SOURCES_DIR}/ini.c"
 )
 
 add_library(ebnf_ini ${SOURCE_FILES})
@@ -31,7 +32,8 @@ add_library(ebnf_ini ${SOURCE_FILES})
 project(test_ebnf_ini)
 list(APPEND SOURCE_FILES
   "${PROJECT_LIBUCONVERT_SOURCES_DIR}/uconvert.c"
-  "${PROJECT_SOURCES_DIR}/ebnf_ini.c"
+  "${PROJECT_SOURCES_DIR}/ebnf_check.c"
+  "${PROJECT_SOURCES_DIR}/ini.c"
   "test/test.c"
 )
 add_executable(test_ebnf_ini ${SOURCE_FILES})
